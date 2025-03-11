@@ -41,5 +41,17 @@ def process_pax_data():
 
     return jsonify({"message": "PAX data processed successfully!"}), 201
 
+@app.route('/test_db_connection', methods=['GET'])
+def test_db_connection():
+    try:
+        conn = connection_pool.getconn()
+        if conn:
+            return jsonify({"message": "Database connection successful!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            connection_pool.putconn(conn)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
