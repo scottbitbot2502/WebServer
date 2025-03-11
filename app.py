@@ -5,17 +5,11 @@ from psycopg2 import pool
 app = Flask(__name__)
 
 # Database connection parameters
-DB_HOST = "aws-0-us-west-1.pooler.supabase.com"
-DB_NAME = "postgres"
-DB_USER = "postgres.xcdiwzjteviapvrefbzu"
-DB_PASS = "Sc0tt062400!"
+DB_CONNECTION_STRING = "postgresql://postgres.xcdiwzjteviapvrefbzu:Sc0tt062400!@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
 
 # Create a connection pool
 connection_pool = pool.SimpleConnectionPool(1, 10,
-    user=DB_USER,
-    password=DB_PASS,
-    host=DB_HOST,
-    database=DB_NAME
+    dsn=DB_CONNECTION_STRING
 )
 
 @app.route('/process_pax_data', methods=['POST'])
@@ -31,7 +25,7 @@ def process_pax_data():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO pax_data (device_name, pax_count)
+            INSERT INTO public.SceeneData (DeviceID, Pax)
             VALUES (%s, %s)
         """, (device_name, pax_count))
         conn.commit()
@@ -43,10 +37,17 @@ def process_pax_data():
 
 @app.route('/test_db_connection', methods=['GET'])
 def test_db_connection():
+    conn = connection_pool.getconn()
     try:
-        conn = connection_pool.getconn()
         if conn:
-            return jsonify({"message": "Database connection successful!"}), 200
+            cursor = conn.cursor()
+            # Insert sample data into SceeneData
+            cursor.execute("""
+                INSERT INTO public.SceeneData (DeviceID, Pax)
+                VALUES (%s, %s)
+            """, ("Test Device", 1))
+            conn.commit()
+            return jsonify({"message": "Database connection successful and sample data inserted!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
